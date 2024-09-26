@@ -1,8 +1,15 @@
 //Init data
 let animations_list = {}
+let css_list = {}
+//Get animation list
 $.getJSON( "animations_list.json", function(data) {
     animations_list = data
     })
+
+//Init data
+$(document).ready(function(){
+    loadCss();
+})
 
 //Preview input
 $("#element").change(function(){
@@ -138,6 +145,7 @@ function toggle_animations_list(a) {
 	$(a).parent(".sub-menu").children("ul").slideToggle("100");
 	$(a).find(".right").toggleClass("fa-caret-up fa-caret-down");
 }
+
 function close_animations_list(){
     $(".sub-menu > ul").slideUp("100");
     $(".right").removeClass('fa-caret-up').addClass('fa-caret-down');
@@ -153,8 +161,26 @@ function get_iteration(a){
     $(a).parent().parent().find('.NOT_INF_ITERATION').attr('disabled', function (_, attr) { return !attr });
 }
 
-//Get all animations
-function get_animations(){
+//Load css to object from CSS file
+async function loadCss() {
+    try {
+      const entrances_keyframe_animations = await fetch("entrances_keyframe_animations.css");
+      const basic_keyframe_animations = await fetch("basic_keyframe_animations.css");
+      const exits_keyframe_animations = await fetch("exits_keyframe_animations.css")
+      let css = ((await entrances_keyframe_animations.text())+(await basic_keyframe_animations.text())+(await exits_keyframe_animations.text())).replaceAll('\r','')
+      while(css.indexOf('/*')!=-1){
+        css = css.slice(0, css.indexOf('/*')) + css.slice(css.indexOf('*/')+2);
+      }
+      css.split('\n').map(n=>n.trim()).filter(n => n != '').forEach(element => {
+        css_list[element.slice(element.indexOf('@-webkit-keyframes ')+19, element.indexOf('{'))] = element
+      });
+    } catch (error) {
+      console.error(error);
+    }
+}
+
+//Get list of animations
+function get_animations_lst(){
     list_of_animations = [];
     $("#ul_animations > li").each(function(_, li){
             let animation_name = $(li).find('.ANIMATION_NAME').val()
@@ -169,13 +195,26 @@ function get_animations(){
             let fill_mode = $(li).find('.FILL_MODE').val()
             list_of_animations.push((duration + "s " + timing_function + timing_function_values + " " + delay + "s " + iteration + " " + direction + " " + fill_mode + " running " + animation).toLowerCase())
         })
-        let ani_str = list_of_animations.join(", ")
-        console.log(list_of_animations)
-        document.getElementById("preview_animation_object").style.animation = 'none';
-        document.getElementById("preview_animation_object").offsetHeight; /* trigger reflow */
-        document.getElementById("preview_animation_object").style.animation = ani_str;
-    }
+    console.log(list_of_animations)
+    return list_of_animations
+}
 
+//Update all animations
+function update_animations(){
+    let ani_str = get_animations_lst().join(", ")
+    document.getElementById("preview_animation_object").style.animation = 'none';
+    document.getElementById("preview_animation_object").offsetHeight; /* trigger reflow */
+    document.getElementById("preview_animation_object").style.animation = ani_str;
+}
+
+//Get all animations
+function get_animations(){
+    $('#keyframes_list').html("")
+    get_animations_lst().forEach(animation_data => {
+        let animation_name = animation_data.split(' ').at(-1)
+        $('#keyframes_list').append(`<div class="whitespace-nowrap">`+css_list[animation_name]+`   <div>`);
+    })
+}
 
 //Get all available animations
 function getAnimationList(css_id){
