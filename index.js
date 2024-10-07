@@ -213,8 +213,10 @@ function get_animations(){
     $('#keyframes_list').html("")
     get_animations_lst().forEach(animation_data => {
         let animation_name = animation_data.split(' ').at(-1)
+        
         $('#keyframes_list').append(`<div class="whitespace-nowrap">`+css_list[animation_name]+`   <div>`);
     })
+    $('#animations_array').val(get_animations_lst().join(','))
 }
 
 //Get all available animations
